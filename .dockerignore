@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.production.example
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+!package.json
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+*.test.ts
+*.spec.ts
+test/
+coverage/
+
+# Deployment scripts
+deploy.sh
+docker-compose.yml
+
+# Dist (will be built in container)
+dist/
