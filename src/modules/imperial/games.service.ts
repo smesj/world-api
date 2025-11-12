@@ -17,7 +17,7 @@ export class GamesService {
         createdBy: {
           select: {
             id: true,
-            email: true,
+            username: true,
             firstName: true,
             lastName: true,
           },
@@ -27,7 +27,7 @@ export class GamesService {
             player: {
               select: {
                 id: true,
-                email: true,
+                username: true,
                 firstName: true,
                 lastName: true,
               },
@@ -45,7 +45,7 @@ export class GamesService {
         createdBy: {
           select: {
             id: true,
-            email: true,
+            username: true,
             firstName: true,
             lastName: true,
           },
@@ -55,7 +55,7 @@ export class GamesService {
             player: {
               select: {
                 id: true,
-                email: true,
+                username: true,
                 firstName: true,
                 lastName: true,
               },
@@ -76,7 +76,7 @@ export class GamesService {
         createdBy: {
           select: {
             id: true,
-            email: true,
+            username: true,
             firstName: true,
             lastName: true,
           },
@@ -86,7 +86,7 @@ export class GamesService {
             player: {
               select: {
                 id: true,
-                email: true,
+                username: true,
                 firstName: true,
                 lastName: true,
               },
@@ -120,7 +120,7 @@ export class GamesService {
         createdBy: {
           select: {
             id: true,
-            email: true,
+            username: true,
             firstName: true,
             lastName: true,
           },
@@ -130,7 +130,7 @@ export class GamesService {
             player: {
               select: {
                 id: true,
-                email: true,
+                username: true,
                 firstName: true,
                 lastName: true,
               },
@@ -179,7 +179,7 @@ export class GamesService {
         player: {
           select: {
             id: true,
-            email: true,
+            username: true,
             firstName: true,
             lastName: true,
           },
@@ -200,7 +200,7 @@ export class GamesService {
         player: {
           select: {
             id: true,
-            email: true,
+            username: true,
             firstName: true,
             lastName: true,
           },
