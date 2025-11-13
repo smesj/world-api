@@ -4,6 +4,8 @@ import { PrismaService } from '../../shared/prisma.service';
 import { TimerController } from './timer.controller';
 import { TimerService } from './timer.service';
 import { TimerGateway } from './timer.gateway';
+import { GamesController } from './games.controller';
+import { GamesService } from './games.service';
 
 @Module({
   imports: [
@@ -12,8 +14,8 @@ import { TimerGateway } from './timer.gateway';
       max: 100, // Maximum number of items in cache
     }),
   ],
-  controllers: [TimerController],
-  providers: [PrismaService, TimerService, TimerGateway],
-  exports: [TimerService],
+  controllers: [TimerController, GamesController],
+  providers: [PrismaService, TimerService, TimerGateway, GamesService],
+  exports: [TimerService, GamesService],
 })
 export class FootyModule {}
