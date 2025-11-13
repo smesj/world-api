@@ -108,14 +108,28 @@ docker run -d \\
     --link world-postgres \\
     ${DOCKER_IMAGE}:${VERSION}
 
-echo "[VM] Waiting for container to be healthy..."
-sleep 5
+echo "[VM] Waiting for migrations to complete and app to start..."
+sleep 8
 
 echo "[VM] Checking container status..."
 docker ps | grep ${CONTAINER_NAME}
 
-echo "[VM] Checking container logs..."
-docker logs ${CONTAINER_NAME} --tail 20
+echo "[VM] Checking migration and startup logs..."
+docker logs ${CONTAINER_NAME} --tail 30
+
+echo "[VM] Verifying migrations ran successfully..."
+if docker logs ${CONTAINER_NAME} 2>&1 | grep -q "prisma migrate deploy"; then
+    echo "[VM] ✓ Prisma migrations detected in logs"
+else
+    echo "[VM] ⚠ WARNING: Migration logs not found - check manually"
+fi
+
+if docker logs ${CONTAINER_NAME} 2>&1 | grep -q "Nest application successfully started"; then
+    echo "[VM] ✓ Application started successfully"
+else
+    echo "[VM] ⚠ WARNING: Application may not have started - check logs"
+    exit 1
+fi
 
 EOF
 
@@ -144,4 +158,9 @@ echo "  - Image: ${DOCKER_IMAGE}:${VERSION}"
 echo "  - Container: ${CONTAINER_NAME}"
 echo "  - URL: https://world-api.smesj.world"
 echo "  - Modules: Identity, Footy, Imperial"
+echo "  - Migrations: Automatically run on startup via Dockerfile CMD"
+echo ""
+log_info "Migration Info:"
+echo "  - Migrations are applied automatically when container starts"
+echo "  - Check logs with: ssh ${VM_USER}@${VM_HOST} 'docker logs ${CONTAINER_NAME} | grep -A5 prisma'"
 echo ""
