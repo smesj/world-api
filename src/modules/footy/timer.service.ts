@@ -10,6 +10,8 @@ export interface TimerData {
 
 @Injectable()
 export class TimerService {
+  private broadcastIntervals: Map<number, NodeJS.Timeout> = new Map();
+
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @Inject(forwardRef(() => TimerGateway)) private timerGateway: TimerGateway,
@@ -82,6 +84,40 @@ export class TimerService {
     }
   }
 
+  private startBroadcastInterval(id: number, timerData: TimerData) {
+    // Clear any existing interval for this timer
+    this.stopBroadcastInterval(id);
+
+    // Start broadcasting updates every second while timer is running
+    const interval = setInterval(async () => {
+      const timer = await this.cacheManager.get<TimerData>('timer_' + id);
+
+      // Stop broadcasting if timer is paused or doesn't exist
+      if (!timer || timer.paused) {
+        this.stopBroadcastInterval(id);
+        return;
+      }
+
+      const time = this.calcTime(Date.now(), timer.from);
+      this.timerGateway.broadcastTimerUpdate(id, time, 'running');
+
+      // Stop at 0:00
+      if (time === '0:00') {
+        this.stopBroadcastInterval(id);
+      }
+    }, 1000);
+
+    this.broadcastIntervals.set(id, interval);
+  }
+
+  private stopBroadcastInterval(id: number) {
+    const interval = this.broadcastIntervals.get(id);
+    if (interval) {
+      clearInterval(interval);
+      this.broadcastIntervals.delete(id);
+    }
+  }
+
   async startTimer(id: number): Promise<TimerData | null> {
     const existingTimer = await this.cacheManager.get<TimerData>('timer_' + id);
 
@@ -99,10 +135,13 @@ export class TimerService {
       result = await this.start(id, existingTimer);
     }
 
-    // Broadcast the timer start event
+    // Broadcast the timer start event and start periodic updates
     if (result) {
       const time = this.calcTime(Date.now(), result.from);
       this.timerGateway.broadcastTimerUpdate(id, time, 'running');
+
+      // Start periodic broadcasts
+      this.startBroadcastInterval(id, result);
     }
 
     return result;
@@ -110,6 +149,9 @@ export class TimerService {
 
   async stopTimer(id: number): Promise<TimerData | null> {
     const result = await this.stop(id);
+
+    // Stop periodic broadcasts
+    this.stopBroadcastInterval(id);
 
     // Broadcast the timer stop event
     if (result && result.paused) {
@@ -122,6 +164,9 @@ export class TimerService {
 
   async resetTimer(id: number): Promise<TimerData | null> {
     const result = await this.create(id);
+
+    // Stop periodic broadcasts
+    this.stopBroadcastInterval(id);
 
     // Broadcast the timer reset event
     if (result && result.paused !== undefined) {
