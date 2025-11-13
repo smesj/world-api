@@ -29,9 +29,9 @@ model User {
 
   // Relations
   createdInvitations Invitation[]  @relation("CreatedBy")
-  footyGames         FootyGame[]
   imperialGames      ImperialGame[]
   imperialScores     ImperialScore[]
+  gameParticipations GameParticipation[]
 
   @@index([username])
 }
@@ -60,40 +60,75 @@ model Invitation {
 }
 
 // ==============================================================================
+// GAMES DOMAIN (Multi-Game Architecture)
+// ==============================================================================
+
+// Base games table - central table for all game types
+model Game {
+  id        Int      @id @default(autoincrement())
+  type      GameType @default(FOOTY)
+  status    GameStatus @default(PENDING)
+  seasonId  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  participations GameParticipation[]
+  footyGame      FootyGame?
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Junction table linking users to games with game-specific player metadata
+model GameParticipation {
+  id           Int     @id @default(autoincrement())
+  gameId       Int
+  userId       String  // Clerk user ID
+  role         String  // 'team_a', 'team_b', 'player_1', etc.
+  stats        Json?   // Flexible JSON for game-specific stats
+
+  // Relations
+  game         Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, userId, role]) // Prevent duplicate participations
+  @@index([userId])
+  @@index([gameId])
+}
+
+// Game types enum
+enum GameType {
+  FOOTY
+  IMPERIAL
+  // Future: CHESS, etc.
+}
+
+// Game status enum
+enum GameStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+// ==============================================================================
 // FOOTY DOMAIN (Table Football)
 // ==============================================================================
 
-// Footy game session - tracks a table football match
+// Footy-specific game data
 model FootyGame {
-  id           String    @id @default(uuid())
+  id            Int      @id @default(autoincrement())
+  gameId        Int      @unique
+  scoreTeamA    Int      @default(0)
+  scoreTeamB    Int      @default(0)
+  duration      Int      @default(360000) // 6 minutes in milliseconds
 
-  // Game details
-  team1Player1 String
-  team1Player2 String?   // Optional for 2v2
-  team2Player1 String
-  team2Player2 String?   // Optional for 2v2
+  // Relations
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  team1Score   Int       @default(0)
-  team2Score   Int       @default(0)
-
-  // Game state
-  status       String    @default("in_progress") // in_progress, completed, abandoned
-
-  // Timer data (stored for historical purposes)
-  duration     Int?      // Duration in seconds
-
-  // Created by
-  createdById  String
-  createdBy    User      @relation(fields: [createdById], references: [id])
-
-  // Metadata
-  startedAt    DateTime  @default(now())
-  completedAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([createdById])
-  @@index([status])
+  @@index([gameId])
 }
 
 // ==============================================================================
