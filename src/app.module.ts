@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { IdentityModule } from './modules/identity/identity.module';
 import { FootyModule } from './modules/footy/footy.module';
 import { ImperialModule } from './modules/imperial/imperial.module';
+import { ToshiRanboModule } from './modules/toshi-ranbo/toshi-ranbo.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     IdentityModule,
     FootyModule,
     ImperialModule,
+    ToshiRanboModule,
     WebhooksModule,
   ],
   controllers: [AppController],

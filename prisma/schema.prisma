@@ -32,7 +32,6 @@ model User {
   imperialGames      ImperialGame[]
   imperialScores     ImperialScore[]
   gameParticipations GameParticipation[]
-  toshiRanboScores   ToshiRanboScore[]
 
   @@index([username])
 }
@@ -205,6 +204,18 @@ model ToshiRanboGame {
   @@index([gameId])
 }
 
+// Toshi Ranbo player, seeded/added directly — no Clerk signup required
+model ToshiRanboPlayer {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  // Relations
+  scores ToshiRanboScore[]
+
+  @@index([name])
+}
+
 // Toshi Ranbo player result for a game
 model ToshiRanboScore {
   id Int @id @default(autoincrement())
@@ -213,9 +224,9 @@ model ToshiRanboScore {
   gameId Int
   game   Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  // Player reference
-  playerId String
-  player   User   @relation(fields: [playerId], references: [id])
+  // Player reference (ToshiRanboPlayer, not the Clerk-backed User table)
+  playerId Int
+  player   ToshiRanboPlayer @relation(fields: [playerId], references: [id])
 
   // Which clan the player controlled
   clan String
