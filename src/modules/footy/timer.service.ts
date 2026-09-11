@@ -2,6 +2,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import type { Cache } from 'cache-manager';
 import { TimerGateway } from './timer.gateway';
+import { PrismaService } from '../../shared/prisma.service';
 
 export interface TimerData {
   from: number;
@@ -15,11 +16,19 @@ export class TimerService {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @Inject(forwardRef(() => TimerGateway)) private timerGateway: TimerGateway,
+    private prisma: PrismaService,
   ) {}
 
-  private calcTime(ancorTime: number, startTime: number) {
+  private async getDuration(gameId: number): Promise<number> {
+    const footyGame = await this.prisma.footyGame.findUnique({
+      where: { gameId },
+    });
+    return footyGame?.duration ?? 360000; // Default to 6 minutes if not found
+  }
+
+  private calcTime(ancorTime: number, startTime: number, duration: number) {
     const runTime = ancorTime - startTime; //in ms
-    const timeDiff = (360000 - runTime) / 1000;
+    const timeDiff = (duration - runTime) / 1000;
     const minutes = Math.floor(timeDiff / 60);
     const seconds = Math.floor(timeDiff - minutes * 60);
 
@@ -27,11 +36,12 @@ export class TimerService {
   }
 
   private async create(id: number): Promise<TimerData | null> {
+    const duration = await this.getDuration(id);
     const startData: TimerData = {
       from: Date.now(),
       paused: Date.now(),
     };
-    await this.cacheManager.set('timer_' + id, startData, 360000);
+    await this.cacheManager.set('timer_' + id, startData, duration);
     const result = await this.cacheManager.get<TimerData>('timer_' + id);
     return result || null;
   }
@@ -40,13 +50,14 @@ export class TimerService {
     if (!timerData.paused) {
       return null;
     }
+    const duration = await this.getDuration(id);
     const adjustedStart = timerData.from - timerData.paused;
 
     const startData: TimerData = {
       from: Date.now() + adjustedStart,
       paused: undefined,
     };
-    await this.cacheManager.set('timer_' + id, startData, 360000);
+    await this.cacheManager.set('timer_' + id, startData, duration);
 
     const result = await this.cacheManager.get<TimerData>('timer_' + id);
     return result || null;
@@ -57,11 +68,12 @@ export class TimerService {
     if (!timer || timer.paused) {
       return null;
     }
+    const duration = await this.getDuration(id);
     const pauseData: TimerData = {
       from: timer.from,
       paused: Date.now(),
     };
-    await this.cacheManager.set('timer_' + id, pauseData, 360000);
+    await this.cacheManager.set('timer_' + id, pauseData, duration);
 
     const result = await this.cacheManager.get<TimerData>('timer_' + id);
     return result || null;
@@ -70,17 +82,18 @@ export class TimerService {
   // pollable endpoint for getting the time
   async getTimePollable(id: number): Promise<string> {
     const timer = await this.cacheManager.get<TimerData>('timer_' + id);
+    const duration = await this.getDuration(id);
     if (!timer) {
       const newTimer = await this.create(id);
       if (!newTimer || newTimer.paused === undefined) {
         return '0:00';
       }
-      return this.calcTime(newTimer.paused, newTimer.from);
+      return this.calcTime(newTimer.paused, newTimer.from, duration);
     }
     if (timer.paused) {
-      return this.calcTime(timer.paused, timer.from);
+      return this.calcTime(timer.paused, timer.from, duration);
     } else {
-      return this.calcTime(Date.now(), timer.from);
+      return this.calcTime(Date.now(), timer.from, duration);
     }
   }
 
@@ -98,7 +111,8 @@ export class TimerService {
         return;
       }
 
-      const time = this.calcTime(Date.now(), timer.from);
+      const duration = await this.getDuration(id);
+      const time = this.calcTime(Date.now(), timer.from, duration);
       this.timerGateway.broadcastTimerUpdate(id, time, 'running');
 
       // Stop at 0:00
@@ -137,7 +151,8 @@ export class TimerService {
 
     // Broadcast the timer start event and start periodic updates
     if (result) {
-      const time = this.calcTime(Date.now(), result.from);
+      const duration = await this.getDuration(id);
+      const time = this.calcTime(Date.now(), result.from, duration);
       this.timerGateway.broadcastTimerUpdate(id, time, 'running');
 
       // Start periodic broadcasts
@@ -155,7 +170,8 @@ export class TimerService {
 
     // Broadcast the timer stop event
     if (result && result.paused) {
-      const time = this.calcTime(result.paused, result.from);
+      const duration = await this.getDuration(id);
+      const time = this.calcTime(result.paused, result.from, duration);
       this.timerGateway.broadcastTimerUpdate(id, time, 'paused');
     }
 
@@ -170,7 +186,8 @@ export class TimerService {
 
     // Broadcast the timer reset event
     if (result && result.paused !== undefined) {
-      const time = this.calcTime(result.paused, result.from);
+      const duration = await this.getDuration(id);
+      const time = this.calcTime(result.paused, result.from, duration);
       this.timerGateway.broadcastTimerUpdate(id, time, 'paused');
     }
 
@@ -187,9 +204,10 @@ export class TimerService {
       return null;
     }
 
+    const duration = await this.getDuration(id);
     const time = timer.paused
-      ? this.calcTime(timer.paused, timer.from)
-      : this.calcTime(Date.now(), timer.from);
+      ? this.calcTime(timer.paused, timer.from, duration)
+      : this.calcTime(Date.now(), timer.from, duration);
 
     const state = timer.paused ? 'paused' : ('running' as const);
 

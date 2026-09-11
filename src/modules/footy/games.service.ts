@@ -226,10 +226,16 @@ export class GamesService {
   async updateGame(gameId: number, dto: UpdateGameDto) {
     const game = await this.getGame(gameId);
 
-    // Verify game is in ACTIVE status for score updates
-    if (game.status !== 'ACTIVE') {
+    // Allow duration updates for PENDING games, score updates for ACTIVE games
+    if (dto.duration !== undefined && game.status !== 'PENDING') {
       throw new BadRequestException(
-        'Can only update games in ACTIVE status',
+        'Can only update duration for games in PENDING status',
+      );
+    }
+
+    if ((dto.scoreTeamA !== undefined || dto.scoreTeamB !== undefined) && game.status !== 'ACTIVE') {
+      throw new BadRequestException(
+        'Can only update scores for games in ACTIVE status',
       );
     }
 
