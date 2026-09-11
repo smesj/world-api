@@ -16,45 +16,46 @@ datasource db {
 
 // User model - synced from Clerk via webhook
 model User {
-  id                String   @id // Clerk user ID
-  username          String   @unique
-  firstName         String?
-  lastName          String?
-  imageUrl          String?
+  id        String  @id // Clerk user ID
+  username  String  @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
 
   // Metadata
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  lastSignInAt      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastSignInAt DateTime?
 
   // Relations
-  createdInvitations Invitation[]  @relation("CreatedBy")
+  createdInvitations Invitation[]        @relation("CreatedBy")
   imperialGames      ImperialGame[]
   imperialScores     ImperialScore[]
   gameParticipations GameParticipation[]
+  toshiRanboScores   ToshiRanboScore[]
 
   @@index([username])
 }
 
 // Invitation model - for invite-only access
 model Invitation {
-  id          String    @id @default(uuid())
-  code        String    @unique @default(cuid())
+  id   String @id @default(uuid())
+  code String @unique @default(cuid())
 
   // Usage tracking
-  maxUses     Int       @default(1)
-  usesCount   Int       @default(0)
+  maxUses   Int @default(1)
+  usesCount Int @default(0)
 
   // Created by
   createdById String?
-  createdBy   User?     @relation("CreatedBy", fields: [createdById], references: [id])
+  createdBy   User?   @relation("CreatedBy", fields: [createdById], references: [id])
 
   // Expiration
-  expiresAt   DateTime?
+  expiresAt DateTime?
 
   // Metadata
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([code])
 }
@@ -65,16 +66,18 @@ model Invitation {
 
 // Base games table - central table for all game types
 model Game {
-  id        Int      @id @default(autoincrement())
-  type      GameType @default(FOOTY)
+  id        Int        @id @default(autoincrement())
+  type      GameType   @default(FOOTY)
   status    GameStatus @default(PENDING)
   seasonId  Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   // Relations
-  participations GameParticipation[]
-  footyGame      FootyGame?
+  participations   GameParticipation[]
+  footyGame        FootyGame?
+  toshiRanboGame   ToshiRanboGame?
+  toshiRanboScores ToshiRanboScore[]
 
   @@index([type])
   @@index([status])
@@ -83,15 +86,15 @@ model Game {
 
 // Junction table linking users to games with game-specific player metadata
 model GameParticipation {
-  id           Int     @id @default(autoincrement())
-  gameId       Int
-  userId       String  // Clerk user ID
-  role         String  // 'team_a', 'team_b', 'player_1', etc.
-  stats        Json?   // Flexible JSON for game-specific stats
+  id     Int    @id @default(autoincrement())
+  gameId Int
+  userId String // Clerk user ID
+  role   String // 'team_a', 'team_b', 'player_1', etc.
+  stats  Json? // Flexible JSON for game-specific stats
 
   // Relations
-  game         Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, userId, role]) // Prevent duplicate participations
   @@index([userId])
@@ -102,6 +105,7 @@ model GameParticipation {
 enum GameType {
   FOOTY
   IMPERIAL
+  TOSHI_RANBO
   // Future: CHESS, etc.
 }
 
@@ -119,14 +123,14 @@ enum GameStatus {
 
 // Footy-specific game data
 model FootyGame {
-  id            Int      @id @default(autoincrement())
-  gameId        Int      @unique
-  scoreTeamA    Int      @default(0)
-  scoreTeamB    Int      @default(0)
-  duration      Int      @default(360000) // 6 minutes in milliseconds
+  id         Int @id @default(autoincrement())
+  gameId     Int @unique
+  scoreTeamA Int @default(0)
+  scoreTeamB Int @default(0)
+  duration   Int @default(360000) // 6 minutes in milliseconds
 
   // Relations
-  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   @@index([gameId])
 }
@@ -137,23 +141,23 @@ model FootyGame {
 
 // Imperial game session
 model ImperialGame {
-  id           String          @id @default(uuid())
+  id String @id @default(uuid())
 
   // Game details
-  status       String          @default("in_progress") // in_progress, completed, abandoned
+  status String @default("in_progress") // in_progress, completed, abandoned
 
   // Created by
-  createdById  String
-  createdBy    User            @relation(fields: [createdById], references: [id])
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
 
   // Relations
-  scores       ImperialScore[]
+  scores ImperialScore[]
 
   // Metadata
-  startedAt    DateTime        @default(now())
-  completedAt  DateTime?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([createdById])
   @@index([status])
@@ -161,24 +165,79 @@ model ImperialGame {
 
 // Imperial player score in a game
 model ImperialScore {
-  id           String        @id @default(uuid())
+  id String @id @default(uuid())
 
   // Game reference
-  gameId       String
-  game         ImperialGame  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId String
+  game   ImperialGame @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   // Player reference
-  playerId     String
-  player       User          @relation(fields: [playerId], references: [id])
+  playerId String
+  player   User   @relation(fields: [playerId], references: [id])
 
   // Score details
-  nation       String        // Which nation the player controlled
-  finalScore   Int           @default(0)
-  position     Int?          // Final position (1st, 2nd, etc.)
+  nation     String // Which nation the player controlled
+  finalScore Int    @default(0)
+  position   Int? // Final position (1st, 2nd, etc.)
 
   // Metadata
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([gameId, playerId])
+  @@index([gameId])
+  @@index([playerId])
+}
+
+// ==============================================================================
+// TOSHI RANBO DOMAIN (Board Game)
+// ==============================================================================
+
+// Toshi Ranbo-specific game data (1:1 with the base Game aggregate root)
+model ToshiRanboGame {
+  id          Int  @id @default(autoincrement())
+  gameId      Int  @unique
+  cardsPlayed Int? // Number of cards played before the game ended
+
+  // Relations
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+}
+
+// Toshi Ranbo player result for a game
+model ToshiRanboScore {
+  id Int @id @default(autoincrement())
+
+  // Game reference
+  gameId Int
+  game   Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  // Player reference
+  playerId String
+  player   User   @relation(fields: [playerId], references: [id])
+
+  // Which clan the player controlled
+  clan String
+
+  // Total points scored
+  totalPoints Int @default(0)
+
+  // Which point categories were scored (fixed-value achievements)
+  fightWin1f        Boolean @default(false) // Fight win (1f)
+  fightWin2f        Boolean @default(false) // Fight win (2f)
+  threeVillages     Boolean @default(false) // 3 Villages (3v)
+  firstToshiRanbo   Boolean @default(false) // First to Toshi Ranbo (1t)
+  twoShrines        Boolean @default(false) // 2 Shrines (2s)
+  threeNobleActions Boolean @default(false) // 3 Noble Actions (3n)
+  twoBuildings      Boolean @default(false) // 2 Buildings (2b)
+  threeTactics      Boolean @default(false) // 3 Tactics (3t)
+  clanGoal1         Boolean @default(false) // Clan Goal (c1)
+  clanGoal2         Boolean @default(false) // Clan Goal (c2)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([gameId, playerId])
   @@index([gameId])
