@@ -11,6 +11,11 @@ export class GamesController {
     return this.gamesService.createGame(dto);
   }
 
+  @Get()
+  getGames() {
+    return this.gamesService.getGames();
+  }
+
   @Get(':id')
   getGame(@Param('id', ParseIntPipe) id: number) {
     return this.gamesService.getGame(id);

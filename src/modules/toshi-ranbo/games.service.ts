@@ -78,6 +78,21 @@ export class GamesService {
     return this.getGame(result.id);
   }
 
+  // List all recorded Toshi Ranbo games, most recent first
+  async getGames() {
+    return this.prisma.game.findMany({
+      where: { type: 'TOSHI_RANBO' },
+      include: {
+        toshiRanboGame: true,
+        toshiRanboScores: {
+          include: { player: { select: PLAYER_SELECT } },
+          orderBy: { totalPoints: 'desc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async getGame(id: number) {
     const game = await this.prisma.game.findUnique({
       where: { id },
