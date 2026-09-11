@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, BadRequestException, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Headers, BadRequestException, Logger, Req } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 
 @Controller('webhooks')
@@ -13,6 +13,7 @@ export class WebhooksController {
     @Headers('svix-timestamp') svixTimestamp: string,
     @Headers('svix-signature') svixSignature: string,
     @Body() payload: any,
+    @Req() req: any,
   ) {
     if (!svixId || !svixTimestamp || !svixSignature) {
       throw new BadRequestException('Missing Svix headers');
@@ -23,6 +24,7 @@ export class WebhooksController {
     try {
       await this.webhooksService.handleClerkWebhook(
         payload,
+        req.rawBody,
         svixId,
         svixTimestamp,
         svixSignature,

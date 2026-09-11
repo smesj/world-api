@@ -16,6 +16,7 @@ export class WebhooksService {
 
   async handleClerkWebhook(
     payload: any,
+    rawBody: string,
     svixId: string,
     svixTimestamp: string,
     svixSignature: string,
@@ -24,11 +25,13 @@ export class WebhooksService {
     if (this.webhookSecret) {
       const wh = new Webhook(this.webhookSecret);
       try {
-        wh.verify(JSON.stringify(payload), {
+        // Use raw body for verification, not re-stringified JSON
+        wh.verify(rawBody, {
           'svix-id': svixId,
           'svix-timestamp': svixTimestamp,
           'svix-signature': svixSignature,
         });
+        this.logger.log('Webhook signature verified successfully');
       } catch (error) {
         this.logger.error('Webhook verification failed', error);
         throw new Error('Invalid webhook signature');
