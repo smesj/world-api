@@ -238,7 +238,8 @@ model ToshiRanboScore {
   fightWin1f        Boolean @default(false) // Fight win (1f)
   fightWin2f        Boolean @default(false) // Fight win (2f)
   threeVillages     Boolean @default(false) // 3 Villages (3v)
-  firstToshiRanbo   Boolean @default(false) // First to Toshi Ranbo (1t)
+  firstToshiRanbo   Boolean @default(false) // First to Toshi Ranbo (1t) - permanent point
+  heldToshiRanbo    Boolean @default(false) // Held Toshi Ranbo (tr) - transient point for holding it, separate from firstToshiRanbo
   twoShrines        Boolean @default(false) // 2 Shrines (2s)
   threeNobleActions Boolean @default(false) // 3 Noble Actions (3n)
   twoBuildings      Boolean @default(false) // 2 Buildings (2b)

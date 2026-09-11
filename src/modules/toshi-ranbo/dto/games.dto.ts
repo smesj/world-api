@@ -42,6 +42,10 @@ export class ToshiRanboPlayerResultDto {
 
   @IsOptional()
   @IsBoolean()
+  heldToshiRanbo?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   twoShrines?: boolean;
 
   @IsOptional()

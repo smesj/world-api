@@ -62,6 +62,7 @@ export class GamesService {
           fightWin2f: r.fightWin2f ?? false,
           threeVillages: r.threeVillages ?? false,
           firstToshiRanbo: r.firstToshiRanbo ?? false,
+          heldToshiRanbo: r.heldToshiRanbo ?? false,
           twoShrines: r.twoShrines ?? false,
           threeNobleActions: r.threeNobleActions ?? false,
           twoBuildings: r.twoBuildings ?? false,
