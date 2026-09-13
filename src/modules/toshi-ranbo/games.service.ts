@@ -3,7 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../../shared/prisma.service';
+import { R2StorageService } from '../../shared/r2-storage.service';
 import { CreateToshiRanboGameDto } from './dto/games.dto';
 
 const PLAYER_SELECT = {
@@ -11,9 +13,19 @@ const PLAYER_SELECT = {
   name: true,
 };
 
+const PHOTO_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+
 @Injectable()
 export class GamesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: R2StorageService,
+  ) {}
 
   // Record a completed Toshi Ranbo game and every player's result in one call
   async createGame(dto: CreateToshiRanboGameDto) {
@@ -110,5 +122,38 @@ export class GamesService {
     }
 
     return game;
+  }
+
+  // Upload/replace the board photo for an existing game
+  async setGamePhoto(gameId: number, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException(
+        'No photo file provided (multipart field name must be "photo")',
+      );
+    }
+
+    // Validates the game exists and is a Toshi Ranbo game
+    await this.getGame(gameId);
+
+    const extension = PHOTO_EXTENSION_BY_MIME_TYPE[file.mimetype];
+    if (!extension) {
+      throw new BadRequestException(
+        `Unsupported image type "${file.mimetype}" — allowed: ${Object.keys(PHOTO_EXTENSION_BY_MIME_TYPE).join(', ')}`,
+      );
+    }
+
+    const key = `toshi-ranbo/${gameId}/${randomUUID()}.${extension}`;
+    const photoUrl = await this.storage.uploadImage(
+      key,
+      file.buffer,
+      file.mimetype,
+    );
+
+    await this.prisma.toshiRanboGame.update({
+      where: { gameId },
+      data: { photoUrl },
+    });
+
+    return this.getGame(gameId);
   }
 }

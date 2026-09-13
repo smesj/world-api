@@ -194,9 +194,10 @@ model ImperialScore {
 
 // Toshi Ranbo-specific game data (1:1 with the base Game aggregate root)
 model ToshiRanboGame {
-  id          Int  @id @default(autoincrement())
-  gameId      Int  @unique
+  id          Int     @id @default(autoincrement())
+  gameId      Int     @unique
   cardsPlayed Int? // Number of cards played before the game ended
+  photoUrl    String? // Public R2 URL of the uploaded board photo, if any
 
   // Relations
   game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
