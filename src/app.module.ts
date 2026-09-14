@@ -7,6 +7,7 @@ import { FootyModule } from './modules/footy/footy.module';
 import { ImperialModule } from './modules/imperial/imperial.module';
 import { ToshiRanboModule } from './modules/toshi-ranbo/toshi-ranbo.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { ToshiTelegramBotModule } from './modules/toshi-telegram-bot/toshi-telegram-bot.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     ImperialModule,
     ToshiRanboModule,
     WebhooksModule,
+    ToshiTelegramBotModule,
   ],
   controllers: [AppController],
   providers: [AppService],
