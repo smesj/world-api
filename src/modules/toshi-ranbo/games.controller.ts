@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Param,
   ParseIntPipe,
@@ -32,6 +33,13 @@ export class GamesController {
   @Get(':id')
   getGame(@Param('id', ParseIntPipe) id: number) {
     return this.gamesService.getGame(id);
+  }
+
+  // Delete a recorded game (e.g. a mis-recorded or test entry). Does not
+  // delete the photo object from R2, only the database record.
+  @Delete(':id')
+  deleteGame(@Param('id', ParseIntPipe) id: number) {
+    return this.gamesService.deleteGame(id);
   }
 
   // Upload/replace the board photo for an existing game.

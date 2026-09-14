@@ -156,4 +156,18 @@ export class GamesService {
 
     return this.getGame(gameId);
   }
+
+  // Delete a recorded game (e.g. a mis-recorded or test entry). Deleting the
+  // base Game row cascades to ToshiRanboGame and ToshiRanboScore — see
+  // onDelete: Cascade in schema.prisma — so this is a single delete, not a
+  // multi-table one. Note: if the game had a photo, the object itself is
+  // NOT deleted from R2 (same as photo replacement never deleting the old
+  // object) — only the database record and its reference to it go away.
+  async deleteGame(id: number) {
+    const game = await this.getGame(id); // validates it exists and is Toshi Ranbo
+
+    await this.prisma.game.delete({ where: { id } });
+
+    return game;
+  }
 }
