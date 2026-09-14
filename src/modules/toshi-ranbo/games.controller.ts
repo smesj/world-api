@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  UseGuards,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
@@ -13,6 +14,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GamesService } from './games.service';
 import { CreateToshiRanboGameDto } from './dto/games.dto';
+import { ApiKeyGuard } from '../../shared/api-key.guard';
 
 const MAX_PHOTO_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
@@ -21,6 +23,7 @@ export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
   @Post()
+  @UseGuards(ApiKeyGuard)
   createGame(@Body() dto: CreateToshiRanboGameDto) {
     return this.gamesService.createGame(dto);
   }
@@ -38,6 +41,7 @@ export class GamesController {
   // Delete a recorded game (e.g. a mis-recorded or test entry). Does not
   // delete the photo object from R2, only the database record.
   @Delete(':id')
+  @UseGuards(ApiKeyGuard)
   deleteGame(@Param('id', ParseIntPipe) id: number) {
     return this.gamesService.deleteGame(id);
   }
@@ -45,6 +49,7 @@ export class GamesController {
   // Upload/replace the board photo for an existing game.
   // multipart/form-data with a single "photo" field.
   @Post(':id/photo')
+  @UseGuards(ApiKeyGuard)
   @UseInterceptors(
     FileInterceptor('photo', {
       limits: { fileSize: MAX_PHOTO_SIZE_BYTES },
