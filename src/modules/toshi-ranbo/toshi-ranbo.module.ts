@@ -5,10 +5,18 @@ import { GamesController } from './games.controller';
 import { GamesService } from './games.service';
 import { PlayersController } from './players.controller';
 import { PlayersService } from './players.service';
+import { LeaderboardController } from './leaderboard.controller';
+import { LeaderboardService } from './leaderboard.service';
 
 @Module({
-  controllers: [GamesController, PlayersController],
-  providers: [PrismaService, R2StorageService, GamesService, PlayersService],
-  exports: [GamesService, PlayersService],
+  controllers: [GamesController, PlayersController, LeaderboardController],
+  providers: [
+    PrismaService,
+    R2StorageService,
+    GamesService,
+    PlayersService,
+    LeaderboardService,
+  ],
+  exports: [GamesService, PlayersService, LeaderboardService],
 })
 export class ToshiRanboModule {}
